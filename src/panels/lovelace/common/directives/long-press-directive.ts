@@ -18,8 +18,10 @@ interface LongPressElement extends Element {
 }
 
 const extractXY = (ev: any): [number, number] =>
-  ev.touches
+  ev.touches && ev.touches.length
     ? [ev.touches[0].pageX, ev.touches[0].pageY]
+    : ev.changedTouches && ev.changedTouches.length
+    ? [ev.changedTouches[0].pageX, ev.changedTouches[0].pageY]
     : [ev.pageX, ev.pageY];
 
 class LongPress extends HTMLElement implements LongPress {
@@ -119,14 +121,20 @@ class LongPress extends HTMLElement implements LongPress {
         Math.abs(this.startX - stopX) > cancelDistanceOnMove ||
         Math.abs(this.startY - stopY) > cancelDistanceOnMove
       ) {
+        console.log("CANCELING");
+        console.log(this.cooldownEnd);
+        console.log(this.startX, stopX, Math.abs(this.startX - stopX));
+        console.log(this.startY, stopY, Math.abs(this.startY - stopX));
         return;
       }
       clearTimeout(this.timer);
       this.stopAnimation();
       this.timer = undefined;
       if (this.held) {
+        console.log("Long press");
         element.dispatchEvent(new Event("ha-hold"));
       } else {
+        console.log("click");
         element.dispatchEvent(new Event("ha-click"));
       }
       this.cooldownEnd = true;

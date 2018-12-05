@@ -1,6 +1,9 @@
 import { directive, PropertyPart } from "lit-html";
 import "@material/mwc-ripple";
 
+// Cancel click if mouse/finger moved more than 20 pixels, probably scrolling
+const cancelDistanceOnMove = 20;
+
 const isTouch =
   "ontouchstart" in window ||
   navigator.maxTouchPoints > 0 ||
@@ -14,6 +17,11 @@ interface LongPressElement extends Element {
   longPress?: boolean;
 }
 
+const extractXY = (ev: any): [number, number] =>
+  ev.touches
+    ? [ev.touches[0].pageX, ev.touches[0].pageY]
+    : [ev.pageX, ev.pageY];
+
 class LongPress extends HTMLElement implements LongPress {
   public holdTime: number;
   protected ripple: any;
@@ -21,6 +29,8 @@ class LongPress extends HTMLElement implements LongPress {
   protected held: boolean;
   protected cooldownStart: boolean;
   protected cooldownEnd: boolean;
+  protected startX: number;
+  protected startY: number;
 
   constructor() {
     super();
@@ -30,6 +40,8 @@ class LongPress extends HTMLElement implements LongPress {
     this.held = false;
     this.cooldownStart = false;
     this.cooldownEnd = false;
+    this.startX = 0;
+    this.startY = 0;
   }
 
   public connectedCallback() {
@@ -89,17 +101,9 @@ class LongPress extends HTMLElement implements LongPress {
         return;
       }
       this.held = false;
-      let x;
-      let y;
-      if ((ev as TouchEvent).touches) {
-        x = (ev as TouchEvent).touches[0].pageX;
-        y = (ev as TouchEvent).touches[0].pageY;
-      } else {
-        x = (ev as MouseEvent).pageX;
-        y = (ev as MouseEvent).pageY;
-      }
+      [this.startX, this.startY] = extractXY(ev);
       this.timer = window.setTimeout(() => {
-        this.startAnimation(x, y);
+        this.startAnimation();
         this.held = true;
       }, this.holdTime);
 
@@ -107,8 +111,14 @@ class LongPress extends HTMLElement implements LongPress {
       window.setTimeout(() => (this.cooldownStart = false), 100);
     };
 
-    const clickEnd = () => {
-      if (this.cooldownEnd) {
+    const clickEnd = (ev: Event) => {
+      const [stopX, stopY] = extractXY(ev);
+
+      if (
+        this.cooldownEnd ||
+        Math.abs(this.startX - stopX) > cancelDistanceOnMove ||
+        Math.abs(this.startY - stopY) > cancelDistanceOnMove
+      ) {
         return;
       }
       clearTimeout(this.timer);
@@ -130,10 +140,10 @@ class LongPress extends HTMLElement implements LongPress {
     element.addEventListener("click", clickEnd);
   }
 
-  private startAnimation(x: number, y: number) {
+  private startAnimation() {
     Object.assign(this.style, {
-      left: `${x}px`,
-      top: `${y}px`,
+      left: `${this.startX}px`,
+      top: `${this.startY}px`,
       display: null,
     });
     this.ripple.disabled = false;

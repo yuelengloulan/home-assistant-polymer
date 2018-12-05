@@ -124,7 +124,7 @@ class LongPress extends HTMLElement implements LongPress {
         console.log("CANCELING");
         console.log(this.cooldownEnd);
         console.log(this.startX, stopX, Math.abs(this.startX - stopX));
-        console.log(this.startY, stopY, Math.abs(this.startY - stopX));
+        console.log(this.startY, stopY, Math.abs(this.startY - stopY));
         return;
       }
       clearTimeout(this.timer);

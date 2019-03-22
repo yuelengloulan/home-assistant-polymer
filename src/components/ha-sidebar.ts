@@ -26,7 +26,7 @@ const computePanels = (hass: HomeAssistant) => {
   if (!panels) {
     return [];
   }
-  const isAdmin = hass.user.is_admin;
+  const isAdmin = hass.user && hass.user.is_admin;
   const sortValue = {
     map: 1,
     logbook: 2,
